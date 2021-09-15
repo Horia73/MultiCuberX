@@ -509,15 +509,14 @@ def solver():
     FlipperUp()
     FlipperDown()
     
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-F.png')
-    
+    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-F.png')    
     
     s1.write(b'h')
     
     b1 = time.time()
     a2 = time.time()
     
-    cmd1 = "cd /home/pi/MultiCuber/rubiks-cube-tracker/usr/bin; python rubiks-cube-tracker.py --directory /home/pi/MultiCuber/CubeScan"
+    cmd1 = "cd ~/MultiCuber/rubiks-cube-tracker/usr/bin; ./rubiks-cube-tracker.py --directory ~/MultiCuber/CubeScan"
     log.info(cmd1)
     output1 = check_output(cmd1, shell=True)
     
@@ -527,22 +526,18 @@ def solver():
     output1 = output1.rstrip(output1[-1])
     output1 = output1.rstrip(output1[-1])
         
-    cmd2 = ("rubiks-color-resolver.py --json --rgb" + " " + "'" + output1 + "'")
+    cmd2 = ("cd ~/MultiCuber/rubiks-color-resolver/usr/bin; ./rubiks-color-resolver.py --json --rgb" + " " + "'" + output1 + "'")
     log.info(cmd2)
     output2 = check_output(cmd2, shell=True)
     
-    fo = open("ouput.txt", "w+")
-    fo.write(str(output2))
-    fo.close()
-    fo = open("ouput.txt", "r")
-    fo.seek(22)
-    contents = fo.read(172-22)
+    output2 = str(output2)
+    contents = output2[22:172]
     print(contents)
     
     b2 = time.time()
     a3= time.time()
     
-    cmd3 = ("cd /home/pi/MultiCuber/rubiks-cube-NxNxN-solver/; ./rubiks-cube-solver.py --state " + contents)
+    cmd3 = ("cd ~/MultiCuber/rubiks-cube-NxNxN-solver/; ./rubiks-cube-solver.py --state " + contents)
     log.info(cmd3)
     output3 = check_output(cmd3, shell=True)
     

@@ -441,14 +441,13 @@ def solver():
     FlipperDown()
     
     camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-F.png')
-    
-    
+        
     s1.write(b'h')
     
     b1 = time.time()
     a2 = time.time()
     
-    cmd1 = "cd /home/pi/MultiCuber/rubiks-cube-tracker/usr/bin; python rubiks-cube-tracker.py --directory /home/pi/MultiCuber/CubeScan"
+    cmd1 = "cd ~/MultiCuber/rubiks-cube-tracker/usr/bin; ./rubiks-cube-tracker.py --directory ~/MultiCuber/CubeScan"
     log.info(cmd1)
     output1 = check_output(cmd1, shell=True)
     
@@ -458,26 +457,22 @@ def solver():
     output1 = output1.rstrip(output1[-1])
     output1 = output1.rstrip(output1[-1])
         
-    cmd2 = ("rubiks-color-resolver.py --json --rgb" + " " + "'" + output1 + "'")
+    cmd2 = ("cd ~/MultiCuber/rubiks-color-resolver/usr/bin; ./rubiks-color-resolver.py --json --rgb" + " " + "'" + output1 + "'")
     log.info(cmd2)
     output2 = check_output(cmd2, shell=True)
     
-    fo = open("ouput.txt", "w+")
-    fo.write(str(output2))
-    fo.close()
-    fo = open("ouput.txt", "r")
-    fo.seek(22)
-    contents = fo.read(118-22)
+    output2 = str(output2)
+    contents = output2[22:118]
     print(contents)
     
     b2 = time.time()
     a3= time.time()
     
-    cmd = ("cd /home/pi/MultiCuber/TPR-4x4x4-Solver-master; java -cp .:threephase.jar:twophase.jar solver " + contents)
-    output = check_output(cmd, shell=True)
-    #print(output)
-    output = str(output)
-    l = list(output)
+    cmd = ("cd ~/MultiCuber/TPR-4x4x4-Solver-master; java -cp .:threephase.jar:twophase.jar solver " + contents)
+    output3 = check_output(cmd, shell=True)
+    
+    output3 = str(output3)
+    l = list(output3)
     del l[:124]
     l = [ele for ele in l if ele.strip()]
     l.pop()
