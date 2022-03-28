@@ -1,7 +1,10 @@
 # MultiCuberX
 Here are 3 examples of solving Rubik's cubes (a big update is on the way):
+
 https://youtu.be/q7xPAZP0UFM 
+
 https://youtu.be/9T3FiTrAEHM 
+
 https://youtu.be/OyEfjKg2A2Y 
 
 A lego robot that can solve 3x3x3, 4x4x4 and 5x5x5 Rubik's Cubes
