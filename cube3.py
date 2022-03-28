@@ -1,329 +1,312 @@
 from subprocess import check_output
-from picamera import PiCamera
 from time import sleep
-from PIL import Image
-import calibrate
 import logging
-import colors
+import imutils
 import serial
 import time
 import cv2
 
-global Down, Medium1, Medium2, Up, FlUp, FlDown, coord, l, camera
+global Down, Medium1, Medium2, Up, FlUp, FlDown, coord, l, camera, i, start
+start = True
+i = 0
 
 l = []
 coord = []
 
 log = logging.getLogger(__name__)
 
-Down=True
-Medium1=False
-Medium2=False
-Up=False
+Down = True
+Medium1 = False
+Medium2 = False
+Up = False
 
-FlUp=True
-FlDown=False
+FlUp = True
+FlDown = False
 
-def prepare():
-    global s1, camera
-    print("Conectarea la Arduino Mega...")
-    s1 = serial.Serial('/dev/ttyACM0', 9600)
-    print("Conectat! - MegaA")
-    print(" ")
 
-    camera = PiCamera(resolution=(200, 200), framerate=30)
-    camera.zoom = (0.1,0.1,0.72,0.72)
-    camera.start_preview(fullscreen = False, window = (680,380,400,400))
-    sleep(1)
-    camera.shutter_speed = camera.exposure_speed
-    camera.exposure_mode = 'off'
-    g = camera.awb_gains
-    camera.awb_mode = 'off'
-    camera.awb_gains = g    
-    
-    sleep(1)
-    print("Gata! Introdu un cub 3x3x3 amestecat iar apoi apasa 'Solve' pentru a rezolva cubul!") 
+def photo(name, angle):
+    global camera
+    sleep(0.3)
+    (retval, img) = camera.read()
+    name = '/Users/horia/MultiCuber/CubeScan/' + str(name)
+    name = str(name)
+    print(name)
+
+    angle = int(angle)
+    img = imutils.rotate(img, angle)
+    cv2.imshow("Capture", img)
+    cv2.waitKey(1)
+    cv2.imwrite(name, img)
+
+
+def status():
+    s1.write(b'M')
+    while (1):
+        r = s1.read()
+        r = r.decode()
+        if r == 'A':
+            break
+
 
 def slow():
-    global delayElevatorG,delayElevatorD,delayElevatorScanD,delayElevatorg,delayElevatord,delayElevatorDown,delayFlipperf,delayElevatorJ,delayElevatorP,delayElevatorUp,delayRotator1,delayRotator2,delayFlipper,delayElevatorScan    
-    delayElevatorG = 0.49
-    delayElevatorD = 0.54
-    delayElevatorJ = 0.21
-    delayElevatorP = 0.3
-    delayElevatorUp = 0.58
-    delayRotator1 = 0.65
-    delayRotator2 = 0.78
-    delayFlipper = 0.15
-    delayElevatorg = 0.32
-    delayElevatord = 0.35
-    delayElevatorDown = 0.39
-    delayFlipperf = 0.11
-    delayElevatorScanD = 0.23
-    delayElevatorScan = 0.36
     s1.write(b'3')
     s1.write(b'7')
 
-def medium():    
-    global delayElevatorG,delayElevatorD,delayElevatorJ,delayElevatorScanD,delayElevatorg,delayElevatord,delayElevatorDown,delayFlipperf,delayElevatorP,delayElevatorUp,delayRotator1,delayRotator2,delayFlipper,delayElevatorScan    
-    delayElevatorG = 0.43
-    delayElevatorD = 0.47
-    delayElevatorJ = 0.18
-    delayElevatorP = 0.26
-    delayElevatorUp = 0.51
-    delayRotator1 = 0.57
-    delayRotator2 = 0.67
-    delayFlipper = 0.15
-    delayElevatorg = 0.32
-    delayElevatord = 0.35
-    delayElevatorDown = 0.39
-    delayFlipperf = 0.11
-    delayElevatorScanD = 0.23
-    delayElevatorScan = 0.31
+
+def normal():
     s1.write(b'3')
     s1.write(b'8')
 
+
 def fast():
-    global delayElevatorG,delayElevatorD,delayElevatorJ,delayElevatorScanD,delayElevatorg,delayElevatord,delayElevatorDown,delayFlipperf,delayElevatorP,delayElevatorUp,delayRotator1,delayRotator2,delayFlipper,delayElevatorScan    
-    delayElevatorG = 0.33
-    delayElevatorD = 0.37
-    delayElevatorJ = 0.14
-    delayElevatorP = 0.2
-    delayElevatorUp = 0.4
-    delayRotator1 = 0.41
-    delayRotator2 = 0.5
-    delayFlipper = 0.15
-    delayElevatorg = 0.32
-    delayElevatord = 0.35
-    delayElevatorDown = 0.39
-    delayFlipperf = 0.11
-    delayElevatorScanD = 0.23
-    delayElevatorScan = 0.24
     s1.write(b'3')
     s1.write(b'9')
 
 def ElevatorDown():
     global Down, Medium1, Medium2, Up
-    
+
     if Down:
         pass
-    
+
     elif Medium1:
         s1.write(b'g')
-        sleep(delayElevatorg)
-        
+
     elif Medium2:
         s1.write(b'd')
-        sleep(delayElevatord)
-        
+
     elif Up:
         s1.write(b'e')
-        sleep(delayElevatorDown)
-    
-    if Down==False:
-        Down=True
-        Medium1=False
-        Medium2=False
-        Up=False
-    
+
+    if Down == False:
+        Down = True
+        Medium1 = False
+        Medium2 = False
+        Up = False
+
+    status()
+
+
 def Elevator1():
     global Down, Medium1, Medium2, Up
-    
+
     if Down:
         s1.write(b'G')
-        sleep(delayElevatorG)
-    
+
     elif Medium1:
         pass
-    
+
     elif Medium2:
         s1.write(b'j')
-        sleep(delayElevatorJ)
-        
+
     elif Up:
         s1.write(b'p')
-        sleep(delayElevatorP)
-    
-    if Medium1==False:
-        Down=False
-        Medium1=True
-        Medium2=False
-        Up=False
-    
+
+    if Medium1 == False:
+        Down = False
+        Medium1 = True
+        Medium2 = False
+        Up = False
+
+    status()
+
+
 def Elevator2():
     global Down, Medium1, Medium2, Up
-    
+
     if Down:
         s1.write(b'D')
-        sleep(delayElevatorD)
-    
+
     elif Medium1:
         s1.write(b'J')
-        sleep(delayElevatorJ)
-    
+
     elif Medium2:
         pass
-        
+
     elif Up:
         s1.write(b'j')
-        sleep(delayElevatorJ)
-        
-    if Medium2==False:
-        Down=False
-        Medium1=False
-        Medium2=True
-        Up=False
-    
+
+    if Medium2 == False:
+        Down = False
+        Medium1 = False
+        Medium2 = True
+        Up = False
+
+    status()
+
+
 def ElevatorUp():
     global Down, Medium1, Medium2, Up
-    
+
     if Down:
         s1.write(b'E')
-        sleep(delayElevatorUp)
-    
+
     elif Medium1:
         s1.write(b'P')
-        sleep(delayElevatorP)
-    
+
     elif Medium2:
         s1.write(b'J')
-        sleep(delayElevatorJ)
-        
+
     elif Up:
         pass
-    
-    if Up==False:
-        Down=False
-        Medium1=False
-        Medium2=False
-        Up=True
 
-   
+    if Up == False:
+        Down = False
+        Medium1 = False
+        Medium2 = False
+        Up = True
+
+    status()
+
+
 def ElevatorUpScan():
     global Down
-    Down=False
+    Down = False
     s1.write(b'S')
-    sleep(delayElevatorScan)
-    
+    status()
+
+
 def ElevatorDownScan():
     global Down
-    Down=True
+    Down = True
     s1.write(b's')
-    sleep(delayElevatorScanD)
-    
+    status()
+
+
 def RotatorPositive():
     s1.write(b'R')
-    sleep(delayRotator1)
-    
+
     if Medium2 or Up:
-        
+
         for n, i in enumerate(l):
-            if i=='F':
-                l[n]='L'
-                
-            elif i=='L':
-                l[n]='B'
-                
-            elif i=='B':
-                l[n]='R'
-                
-            elif i=='R':
-                l[n]='F'
-    
+            if i == 'F':
+                l[n] = 'L'
+
+            elif i == 'L':
+                l[n] = 'B'
+
+            elif i == 'B':
+                l[n] = 'R'
+
+            elif i == 'R':
+                l[n] = 'F'
+
+    status()
+
+
 def RotatorNegative():
     s1.write(b'r')
-    sleep(delayRotator1)
-    
+
     if Medium2 or Up:
-        
+
         for n, i in enumerate(l):
-            if i=='F':
-                l[n]='R'
-                
-            elif i=='L':
-                l[n]='F'
-                
-            elif i=='B':
-                l[n]='L'
-                
-            elif i=='R':
-                l[n]='B'      
-    
+            if i == 'F':
+                l[n] = 'R'
+
+            elif i == 'L':
+                l[n] = 'F'
+
+            elif i == 'B':
+                l[n] = 'L'
+
+            elif i == 'R':
+                l[n] = 'B'
+
+    status()
+
+
 def RotatorDouble():
     s1.write(b'B')
-    sleep(delayRotator2)
-    
+
     if Medium2 or Up:
-        
+
         for n, i in enumerate(l):
-            if i=='F':
-                l[n]='B'
-                
-            elif i=='L':
-                l[n]='R'
-                
-            elif i=='B':
-                l[n]='F'
-                
-            elif i=='R':
-                l[n]='L'
+            if i == 'F':
+                l[n] = 'B'
+
+            elif i == 'L':
+                l[n] = 'R'
+
+            elif i == 'B':
+                l[n] = 'F'
+
+            elif i == 'R':
+                l[n] = 'L'
+
+    status()
+
 
 def FlipperUp():
     global FlUp, FlDown
-    
-    if FlDown:                     
+
+    if FlDown:
         if Down:
             s1.write(b'F')
-            sleep(delayFlipper)
             for n, i in enumerate(l):
-                
-                if i=='F':
-                    l[n]='U'
-                elif i=='U':
-                    l[n]='B'
-                elif i=='B':
-                    l[n]='D'
-                elif i=='D':
-                    l[n]='F'
-                    
-        elif Down==False:
-            s1.write(b'6')
-            s1.write(b'F')
-            sleep(delayFlipperf)
-                
+
+                if i == 'F':
+                    l[n] = 'U'
+                elif i == 'U':
+                    l[n] = 'B'
+                elif i == 'B':
+                    l[n] = 'D'
+                elif i == 'D':
+                    l[n] = 'F'
+
+        elif Down == False:
+            s1.write(b'X')
+
     elif FlUp:
         pass
-    
+
     FlUp = True
     FlDown = False
-    
+    status()
+
+
 def FlipperDown():
     global FlUp, FlDown
-    
-    if FlUp:        
+
+    if FlUp:
         if Down:
             s1.write(b'f')
-            sleep(delayFlipper)
             for n, i in enumerate(l):
-                
-                if i=='F':
-                    l[n]='D'
-                elif i=='U':
-                    l[n]='F'
-                elif i=='B':
-                    l[n]='U'
-                elif i=='D':
-                    l[n]='B'
-        
-        elif Down==False:
-            s1.write(b'6')
-            s1.write(b'f')
-            sleep(delayFlipperf)
-    
+
+                if i == 'F':
+                    l[n] = 'D'
+                elif i == 'U':
+                    l[n] = 'F'
+                elif i == 'B':
+                    l[n] = 'U'
+                elif i == 'D':
+                    l[n] = 'B'
+
+        elif Down == False:
+            s1.write(b'x')
+
     elif FlDown:
         pass
-    
+
     FlDown = True
     FlUp = False
+    status()
+
+
+def prepare():
+    global s1, camera
+    print("Conectarea la Arduino Mega...")
+    s1 = serial.Serial('/dev/tty.usbmodem21401', 9600)
+    print("Conectat! - MegaA")
+    print(" ")
+
+    camera = cv2.VideoCapture(0)
+    sleep(1.5)
+
+    (retval, img) = camera.read()
+
+    cv2.imshow("Capture", img)
+
+    print("Gata! Introdu un cub 3x3x3 amestecat iar apoi apasa 'Solve' pentru a rezolva cubul!")
+
 
 def close():
     global camera
@@ -331,102 +314,124 @@ def close():
     FlipperUp()
     sleep(0.2)
     s1.write(b'h')
-    camera.close()
+    del (camera)
+    camera = None
     s1.write(b'Q')
-            
-def solver():
-    
-    global l,coord
+
+
+def pattern1():
+    global l
+    l = []
+    l.extend(("U", "2", "D", "2", "F", "2", "B", "2", "R", "2", "L", "2"))
+    solver()
+
+
+def pattern2():
+    global l
+    l = []
+    l.extend(("U", "D", "'", "R", "L", "'", "F", "B", "'", "U", "D", "'"))
+    solver()
+
+
+def pattern3():
+    global l
+    l = []
+    l.extend(("U", "F", "B", "'", "L", "2", "U", "2", "L", "2", "F", "'", "B", "U", "2", "L", "2", "U"))
+    solver()
+
+
+def pattern4():
+    global l
+    l = []
+    l.extend(("R", "2", "L", "'", "D", "F", "2", "R", "'", "D", "'", "R", "'", "L", "U", "'", "D", "R", "D", "B", "2",
+              "R", "'", "U", "D", "2"))
+    solver()
+
+
+def scanner():
+    global l, coord, b1, a1, b2, a2, b3, a3
     a1 = time.time()
     s1.write(b'H')
     FlipperDown()
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-U.png')
-    im = Image.open('/home/pi/MultiCuber/CubeScan/rubiks-side-U.png')
-    rotated = im.rotate(270)
-    rotated.save('/home/pi/MultiCuber/CubeScan/rubiks-side-U.png')
-    
+    photo('rubiks-side-U.png', '270')
+
     ElevatorUpScan()
     FlipperUp()
     ElevatorDownScan()
-    FlipperDown()    
-    
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-R.png')
-    im = Image.open('/home/pi/MultiCuber/CubeScan/rubiks-side-R.png')
-    rotated = im.rotate(180)
-    rotated.save('/home/pi/MultiCuber/CubeScan/rubiks-side-R.png')
-    
+    FlipperDown()
+
+    photo('rubiks-side-R.png', '180')
+
     ElevatorUpScan()
     FlipperUp()
     ElevatorDownScan()
-    FlipperDown()    
-    
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-D.png')
-    im = Image.open('/home/pi/MultiCuber/CubeScan/rubiks-side-D.png')
-    rotated = im.rotate(90)
-    rotated.save('/home/pi/MultiCuber/CubeScan/rubiks-side-D.png')
-    
+    FlipperDown()
+
+    photo('rubiks-side-D.png', '90')
+
     ElevatorUpScan()
     FlipperUp()
     ElevatorDownScan()
-    FlipperDown()    
-    
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-L.png')
-    
+    FlipperDown()
+
+    photo('rubiks-side-L.png', '0')
+
     ElevatorUp()
     RotatorNegative()
     ElevatorDown()
     FlipperUp()
     FlipperDown()
-    
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-B.png')
-    
+
+    photo('rubiks-side-B.png', '0')
+
     ElevatorUp()
     RotatorDouble()
     ElevatorDown()
     FlipperUp()
     FlipperDown()
-    
-    camera.capture('/home/pi/MultiCuber/CubeScan/rubiks-side-F.png')    
-    
+
+    photo('rubiks-side-F.png', '0')
+
     s1.write(b'h')
-    
+
     b1 = time.time()
+
+
+def analyzer():
+    global l, coord, b1, a1, b2, a2, b3, a3, q
     a2 = time.time()
-    
-    cmd1 = "cd ~/MultiCuber/rubiks-cube-tracker/usr/bin; ./rubiks-cube-tracker.py --directory ~/MultiCuber/CubeScan"
+
+    cmd1 = ("cd ~/MultiCuber/rubiks-cube-tracker/usr/bin; python3 rubiks-cube-tracker.py --directory ~/MultiCuber/CubeScan")
     log.info(cmd1)
     output1 = check_output(cmd1, shell=True)
-    
+
     output1 = str(output1)
     output1 = output1[2:]
     output1 = output1.rstrip(output1[-1])
     output1 = output1.rstrip(output1[-1])
     output1 = output1.rstrip(output1[-1])
-        
-    cmd2 = ("cd ~/MultiCuber/rubiks-color-resolver/usr/bin; ./rubiks-color-resolver.py --json --rgb" + " " + "'" + output1 + "'")
+
+    cmd2 = ("cd ~/MultiCuber/rubiks-color-resolver/usr/bin; python3 rubiks-color-resolver.py --json --rgb" + " " + "'" + output1 + "'")
     log.info(cmd2)
     output2 = check_output(cmd2, shell=True)
-    
+
     output2 = str(output2)
     contents = output2[22:76]
     print(contents)
-    
-    b2 = time.time()
-    a3= time.time()
-    
+
     cmd3 = ("cd ~/MultiCuber/rubiks-cube-NxNxN-solver/; ./rubiks-cube-solver.py --state " + contents)
     log.info(cmd3)
     output3 = check_output(cmd3, shell=True)
-    
+
     output3 = str(output3)
     output3 = output3[12:]
     output3 = output3.rstrip(output3[-1])
     output3 = output3.rstrip(output3[-1])
     output3 = output3.rstrip(output3[-1])
-    
+
     l = list(output3)
     l = [e for e in l if e.strip()]
-   
+
     l.append('Terminat!')
     print(l)
     print("Scanarea si gasirea algoritmului s-a finlizat!")
@@ -434,27 +439,32 @@ def solver():
     print("Incepem sa rezolvam cubul!")
     c1 = l.count("w")
     print("Mutari pentru stratul mijlociu (w):")
-    print(c1)       
+    print(c1)
     c2 = l.count("'")
     print("Mutari prime ('):")
-    print(c2)       
+    print(c2)
     c3 = l.count('2')
     print("Mutari duble:")
-    print(c3)       
-    c4 = len(l)      
+    print(c3)
+    c4 = len(l)
     q = c4 - c3 - c2 - c1
     print("Mutari totale:")
     print(q)
-    
-    b3 = time.time()
-    a4 = time.time()
-    
+
+    b2 = time.time()
+
+
+def solver():
+    global l, coord, b1, a1, b2, a2, b3, a3, i, start
+    a3 = time.time()
+
     s1.write(b'H')
-    
+
     for x in range(q):
-        
-        if l[0]=="F" and l[1]=="'":
-            
+        if x > 1 and x < 3:
+            start = False
+        if l[0] == "F" and l[1] == "'":
+
             FlipperDown()
             ElevatorDown()
             FlipperUp()
@@ -463,8 +473,8 @@ def solver():
             del l[0]
             del l[0]
 
-        elif l[0]=="F" and l[1]=="2":
-            
+        elif l[0] == "F" and l[1] == "2":
+
             FlipperDown()
             ElevatorDown()
             FlipperUp()
@@ -473,8 +483,8 @@ def solver():
             del l[0]
             del l[0]
 
-        elif l[0]=="R" and l[1]=="'":
-            
+        elif l[0] == "R" and l[1] == "'":
+
             ElevatorUp()
             RotatorPositive()
             FlipperDown()
@@ -485,8 +495,8 @@ def solver():
             del l[0]
             del l[0]
 
-        elif l[0]=="R" and l[1]=="2":
-            
+        elif l[0] == "R" and l[1] == "2":
+
             ElevatorUp()
             RotatorPositive()
             FlipperDown()
@@ -497,54 +507,67 @@ def solver():
             del l[0]
             del l[0]
 
-        elif l[0]=="U" and l[1]=="'":
+        elif l[0] == "U" and l[1] == "'":
             Elevator1()
             RotatorNegative()
             del l[0]
             del l[0]
 
-        elif l[0]=="U" and l[1]=="2":
+        elif l[0] == "U" and l[1] == "2":
             Elevator1()
             RotatorDouble()
             del l[0]
             del l[0]
 
-        elif l[0]=="B" and l[1]=="'":
-            
-            FlipperDown()
-            ElevatorDown()
-            FlipperUp()
+        elif l[0] == "B" and l[1] == "'":
+            if start:
+                FlipperDown()
+                ElevatorDown()
+                FlipperUp()
+                Elevator2()
+                RotatorNegative()
+            else:
+                FlipperUp()
+                ElevatorDown()
+                FlipperDown()
+                Elevator1()
+                RotatorNegative()
+            del l[0]
+            del l[0]
+
+        elif l[0] == "B" and l[1] == "2":
+
+            if start:
+                FlipperDown()
+                ElevatorDown()
+                FlipperUp()
+                Elevator2()
+                RotatorDouble()
+            else:
+                FlipperUp()
+                ElevatorDown()
+                FlipperDown()
+                Elevator1()
+                RotatorDouble()
+            del l[0]
+            del l[0]
+
+        elif l[0] == "D" and l[1] == "'":
+
             Elevator2()
             RotatorNegative()
             del l[0]
             del l[0]
 
-        elif l[0]=="B" and l[1]=="2":
-            
-            FlipperDown()
-            ElevatorDown()
-            FlipperUp()
+        elif l[0] == "D" and l[1] == "2":
+
             Elevator2()
             RotatorDouble()
             del l[0]
             del l[0]
 
-        elif l[0]=="D" and l[1]=="'":
-            
-            Elevator2()
-            RotatorNegative()
-            del l[0]
-            del l[0]
+        elif l[0] == "L" and l[1] == "'":
 
-        elif l[0]=="D" and l[1]=="2":
-            
-            Elevator2()
-            RotatorDouble()
-            del l[0]
-            del l[0]
-
-        elif l[0]=="L" and l[1]=="'":
-            
             ElevatorUp()
             RotatorNegative()
             FlipperDown()
@@ -555,8 +578,8 @@ def solver():
             del l[0]
             del l[0]
 
-        elif l[0]=="L" and l[1]=="2":
-            
+        elif l[0] == "L" and l[1] == "2":
+
             ElevatorUp()
             RotatorNegative()
             FlipperDown()
@@ -567,8 +590,8 @@ def solver():
             del l[0]
             del l[0]
 
-        elif l[0]=="F":
-            
+        elif l[0] == "F":
+
             FlipperDown()
             ElevatorDown()
             FlipperUp()
@@ -576,8 +599,8 @@ def solver():
             RotatorPositive()
             del l[0]
 
-        elif l[0]=="R":
-            
+        elif l[0] == "R":
+
             ElevatorUp()
             RotatorPositive()
             FlipperDown()
@@ -587,28 +610,35 @@ def solver():
             RotatorPositive()
             del l[0]
 
-        elif l[0]=="U":
+        elif l[0] == "U":
             Elevator1()
             RotatorPositive()
             del l[0]
 
-        elif l[0]=="B":
-            
-            FlipperDown()
-            ElevatorDown()
-            FlipperUp()
+        elif l[0] == "B":
+
+            if start:
+                FlipperDown()
+                ElevatorDown()
+                FlipperUp()
+                Elevator2()
+                RotatorPositive()
+            else:
+                FlipperUp()
+                ElevatorDown()
+                FlipperDown()
+                Elevator1()
+                RotatorPositive()
+            del l[0]
+
+        elif l[0] == "D":
+
             Elevator2()
             RotatorPositive()
             del l[0]
 
-        elif l[0]=="D":
-            
-            Elevator2()
-            RotatorPositive()
-            del l[0]
+        elif l[0] == "L":
 
-        elif l[0]=="L":
-            
             ElevatorUp()
             RotatorNegative()
             FlipperDown()
@@ -618,153 +648,149 @@ def solver():
             RotatorPositive()
             del l[0]
 
-        elif l[0]=="x" and l[1]=="'":
+        elif l[0] == "x" and l[1] == "'":
             del l[0]
             del l[0]
             for n, i in enumerate(l):
-                if i=='F':
-                    l[n]='D'
-                elif i=='U':
-                    l[n]='F'
-                elif i=='D':
-                    l[n]='B'
-                elif i=='B':
-                    l[n]='U'
+                if i == 'F':
+                    l[n] = 'D'
+                elif i == 'U':
+                    l[n] = 'F'
+                elif i == 'D':
+                    l[n] = 'B'
+                elif i == 'B':
+                    l[n] = 'U'
 
-        elif l[0]=="x" and l[1]=="2":
+        elif l[0] == "x" and l[1] == "2":
             del l[0]
             del l[0]
             for n, i in enumerate(l):
-                if i=='F':
-                    l[n]='B'
-                elif i=='U':
-                    l[n]='D'
-                elif i=='D':
-                    l[n]='U'
-                elif i=='B':
-                    l[n]='F'
+                if i == 'F':
+                    l[n] = 'B'
+                elif i == 'U':
+                    l[n] = 'D'
+                elif i == 'D':
+                    l[n] = 'U'
+                elif i == 'B':
+                    l[n] = 'F'
 
-        elif l[0]=="x":
+        elif l[0] == "x":
             del l[0]
             for n, i in enumerate(l):
-                if i=='F':
-                    l[n]='U'
-                elif i=='U':
-                    l[n]='B'
-                elif i=='D':
-                    l[n]='F'
-                elif i=='B':
-                    l[n]='D'
+                if i == 'F':
+                    l[n] = 'U'
+                elif i == 'U':
+                    l[n] = 'B'
+                elif i == 'D':
+                    l[n] = 'F'
+                elif i == 'B':
+                    l[n] = 'D'
 
-        elif l[0]=="y" and l[1]=="'":
-            del l[0]
-            del l[0]
-            for n, i in enumerate(l):
-                if i=='F':
-                    l[n]='R'
-                elif i=='R':
-                    l[n]='B'
-                elif i=='L':
-                    l[n]='F'
-                elif i=='B':
-                    l[n]='L'
-
-        elif l[0]=="y" and l[1]=="2":
+        elif l[0] == "y" and l[1] == "'":
             del l[0]
             del l[0]
             for n, i in enumerate(l):
-                if i=='F':
-                    l[n]='B'
-                elif i=='R':
-                    l[n]='L'
-                elif i=='L':
-                    l[n]='R'
-                elif i=='B':
-                    l[n]='F'
+                if i == 'F':
+                    l[n] = 'R'
+                elif i == 'R':
+                    l[n] = 'B'
+                elif i == 'L':
+                    l[n] = 'F'
+                elif i == 'B':
+                    l[n] = 'L'
 
-        elif l[0]=="y":
-            del l[0]
-            for n, i in enumerate(l):
-                if i=='F':
-                    l[n]='L'
-                elif i=='R':
-                    l[n]='F'
-                elif i=='L':
-                    l[n]='B'
-                elif i=='B':
-                    l[n]='R'
-
-        elif l[0]=="z" and l[1]=="'":
+        elif l[0] == "y" and l[1] == "2":
             del l[0]
             del l[0]
             for n, i in enumerate(l):
-                if i=='R':
-                    l[n]='U'
-                elif i=='U':
-                    l[n]='L'
-                elif i=='L':
-                    l[n]='D'
-                elif i=='D':
-                    l[n]='R'
+                if i == 'F':
+                    l[n] = 'B'
+                elif i == 'R':
+                    l[n] = 'L'
+                elif i == 'L':
+                    l[n] = 'R'
+                elif i == 'B':
+                    l[n] = 'F'
 
-        elif l[0]=="z" and l[1]=="2":
+        elif l[0] == "y":
+            del l[0]
+            for n, i in enumerate(l):
+                if i == 'F':
+                    l[n] = 'L'
+                elif i == 'R':
+                    l[n] = 'F'
+                elif i == 'L':
+                    l[n] = 'B'
+                elif i == 'B':
+                    l[n] = 'R'
+
+        elif l[0] == "z" and l[1] == "'":
             del l[0]
             del l[0]
             for n, i in enumerate(l):
-                if i=='R':
-                    l[n]='L'
-                elif i=='U':
-                    l[n]='D'
-                elif i=='L':
-                    l[n]='R'
-                elif i=='D':
-                    l[n]='U'
+                if i == 'R':
+                    l[n] = 'U'
+                elif i == 'U':
+                    l[n] = 'L'
+                elif i == 'L':
+                    l[n] = 'D'
+                elif i == 'D':
+                    l[n] = 'R'
 
-        elif l[0]=="z":
+        elif l[0] == "z" and l[1] == "2":
+            del l[0]
             del l[0]
             for n, i in enumerate(l):
-                if i=='R':
-                    l[n]='D'
-                elif i=='U':
-                    l[n]='R'
-                elif i=='L':
-                    l[n]='U'
-                elif i=='D':
-                    l[n]='L'
+                if i == 'R':
+                    l[n] = 'L'
+                elif i == 'U':
+                    l[n] = 'D'
+                elif i == 'L':
+                    l[n] = 'R'
+                elif i == 'D':
+                    l[n] = 'U'
 
-        elif l[0]=="Terminat!":
+        elif l[0] == "z":
             del l[0]
-            #print(l)
+            for n, i in enumerate(l):
+                if i == 'R':
+                    l[n] = 'D'
+                elif i == 'U':
+                    l[n] = 'R'
+                elif i == 'L':
+                    l[n] = 'U'
+                elif i == 'D':
+                    l[n] = 'L'
+
+        elif l[0] == "Terminat!":
+            del l[0]
             print("Cubul a fost rezolvat! Introdu alt cub si apasa 'Solve' pentru a-l rezolva!")
             print(" ")
             ElevatorDown()
-            FlipperUp()
             FlipperDown()
             FlipperUp()
-            sleep(0.2)
+            status()
             s1.write(b'h')
-            b4 = time.time()
-            
-            t1=b1-a1
-            t2=b2-a2
-            t3=b3-a3
-            t4=b4-a4
-            t=t1+t2+t3+t4
-            if q==1:
-                med=0
+            b3 = time.time()
+
+            t1 = b1 - a1
+            t2 = b2 - a2
+            t3 = b3 - a3
+            t = t1 + t2 + t3
+            if q == 1:
+                med = 0
             else:
-                med=t4/(q-1)
-            
-            print('Scanarea a durat ' + str(round(t1,2)) + ' secunde.')
-            print('Analizarea imaginilor a durat ' + str(round(t2,2)) + ' secunde.')
-            print('Cautarea solutiei a durat ' + str(round(t3,2)) + ' secunde.')
-            print('Rezolvarea cubului a durat ' + str(round(t4,2)) + ' secunde.')
-            print('Timp mediu pe mutare: ' + str(round(med,2)) + ' secunde.')
-            print('Timp total: ' + str(round(t,2)) + ' secunde.')
+                med = t3 / (q - 1)
+
+            print('Scanarea a durat ' + str(round(t1, 2)) + ' secunde.')
+            print('Analizarea imaginilor si cautarea solutiei a durat ' + str(round(t2, 2)) + ' secunde.')
+            print('Rezolvarea cubului a durat ' + str(round(t3, 2)) + ' secunde.')
+            print('Timp mediu pe mutare: ' + str(round(med, 2)) + ' secunde.')
+            print('Timp total: ' + str(round(t, 2)) + ' secunde.')
 
         else:
 
-            i=i+1
+            i = i + 1
             print("Prea multe mutari:" + i)
-    
-    return(t)
+
+    return (t)
