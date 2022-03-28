@@ -17,3 +17,5 @@ For now, image analisys it's done with rubiksk-cube-tracker, rubiks-color-resolv
 
 There are some experimental files there like TPR by Chen Shuang:
 https://github.com/cs0x7f/TPR-4x4x4-Solver
+
+Calibrate.py and colors.py is my tentative to develop a Color Extractor (OpenCV based) to get the colors of the cube... so far it's not really working as I wanted...
