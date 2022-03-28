@@ -16,7 +16,7 @@ So I decided to make something like that but with stepper motors and here we are
 
 For now, image analisys it's done with rubiksk-cube-tracker, rubiks-color-resolver and the solution is provided by rubiks-cube-NxNxN-solver. The links are available at the CraneCuber repository.
 
-There are some experimental files there like TPR by Chen Shuang:
+The 4x4x4 cube is solved using TPR by Chen Shuang:
 https://github.com/cs0x7f/TPR-4x4x4-Solver
 
 calibrate.py and colors.py is my tentative to develop a Color Extractor (OpenCV based) to get the colors of the cube... so far it's not really working as I wanted...
